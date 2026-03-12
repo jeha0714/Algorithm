@@ -9,7 +9,6 @@ int find_max_n(vector<vector<int> > & dup_row) {
     for (int n = 1000; ; n--) {
         for (int r = 0; r < dup_row.size(); r++) {
             for (int c = 0; c < dup_row[r].size(); c++) {
-                // cout << r << " " << c << " " << dup_row[r][c] << " " << n << "\n";
                 if (dup_row[r][c] % n != 0) {
                     n--;
                     r = 0;
@@ -27,7 +26,6 @@ int find_max_m(vector<vector<int> > & dup_col) {
     for (int m = 1000; ; m--) {
         for (int r = 0; r < dup_col.size(); r++) {
             for (int c = 0; c < dup_col[r].size(); c++) {
-                // cout << r << " " << c << " " << dup_col[r][c] << " " << m << "\n";
                 if (dup_col[r][c] % m != 0) {
                     m--;
                     r = 0;

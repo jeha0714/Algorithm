@@ -1,7 +1,7 @@
 #include <string>
 #include <vector>
-#include <iostream>
 #include <queue>
+#include <iostream>
 
 using namespace std;
 
@@ -9,18 +9,32 @@ enum {
     outside,
     inside,
     will_outside,
-    removed
+    removed_no_outside,
+    removed_yes_outside,
 };
+
+void	bfs(int r, int c, vector<vector<int>> & status);
+
+bool	is_valid_range(int r, int c, int max_r, int max_c) {
+    if (0 <= r && r < max_r && 0 <= c && c < max_c)
+        return (true);
+   	else
+        return (false);
+}
 
 void	adjust_adjacent(int r, int c, vector<vector<int>> & status) {
     int	dr[4] = {-1, 0, 1, 0};
     int	dc[4] = {0, 1, 0, -1};
     
     for (int i = 0; i < 4; i++) {
-        if (0 <= r + dr[i] && r + dr[i] < status.size() 
-           && 0 <= c + dc[i] && c + dc[i] < status[0].size()
-           && status[r + dr[i]][c + dc[i]] == inside) {
-            status[r + dr[i]][c + dc[i]] = will_outside;
+        if (is_valid_range(r + dr[i], c + dc[i], status.size(), status[0].size())) {
+            if (status[r + dr[i]][c + dc[i]] == inside) {
+            	status[r + dr[i]][c + dc[i]] = will_outside;
+            }
+            else if (status[r + dr[i]][c + dc[i]] == removed_no_outside) {
+                status[r + dr[i]][c + dc[i]] = removed_yes_outside; 
+                bfs(r + dr[i], c + dc[i], status);
+            }
         }
     }
 }
@@ -40,11 +54,14 @@ void	bfs(int r, int c, vector<vector<int>> & status) {
         c = tmp.second;
         
          for (int i = 0; i < 4; i++) {
-            if (0 <= r + dr[i] && r + dr[i] < status.size() 
-               && 0 <= c + dc[i] && c + dc[i] < status[0].size()
-               && status[r + dr[i]][c + dc[i]] == inside) {
-                status[r + dr[i]][c + dc[i]] = will_outside;
-                q.push(make_pair(r + dr[i], c));
+            if (is_valid_range(r + dr[i], c + dc[i], status.size(), status[0].size())){
+                if (status[r + dr[i]][c + dc[i]] == removed_no_outside) {
+                    status[r + dr[i]][c + dc[i]] = removed_yes_outside; 
+                    q.push(make_pair(r + dr[i], c + dc[i]));
+                }
+                else if (status[r + dr[i]][c + dc[i]] == inside) {
+                    status[r + dr[i]][c + dc[i]] = will_outside;
+                }
             }
         }   
     }
@@ -65,7 +82,7 @@ int solution(vector<string> storage, vector<string> requests) {
         }
     }
     
-    // 1. Calculate
+    // 1. Calculate block
     for (int i_cmd = 0; i_cmd < requests.size(); i_cmd++) {
         cmd = requests[i_cmd][0];
             
@@ -74,39 +91,31 @@ int solution(vector<string> storage, vector<string> requests) {
             for (int r = 0; r < len_r; r++) {
                 for (int c = 0; c < len_c; c++) {
                     if (status[r][c] == outside && storage[r][c] == cmd) {
-                        status[r][c] = removed;
+                        status[r][c] = removed_yes_outside;
                         adjust_adjacent(r, c, status);
                     }
                 }
             }
         }
         else {
+            // 1) remove inside first
+            for (int r = 0; r < len_r; r++) {
+                for (int c = 0; c < len_c; c++) {
+                    if (status[r][c] == inside && storage[r][c] == cmd) {
+                        status[r][c] = removed_no_outside;
+                    }
+                }
+            }
+            // 2) remove outside next
             for (int r = 0; r < len_r; r++) {
                 for (int c = 0; c < len_c; c++) {
                     if (status[r][c] == outside && storage[r][c] == cmd) {
-                        status[r][c] = removed;
+                        status[r][c] = removed_yes_outside;
                         adjust_adjacent(r, c, status);
                     }
                 }
             }
-            for (int r = 0; r < len_r; r++) {
-                for (int c = 0; c < len_c; c++) {
-                    if (storage[r][c] == cmd) {
-                        if (status[r][c] == will_outside) {
-                            bfs(r, c, status);
-                        }
-                    }
-                }
-            }
-            for (int r = 0; r < len_r; r++) {
-                for (int c = 0; c < len_c; c++) {
-                    if (storage[r][c] == cmd) {
-                        if (status[r][c] == will_outside)
-                            adjust_adjacent(r, c, status);
-                        status[r][c] = removed;
-                    }
-                }
-            }
+
         }
         
         // b. set next status
@@ -117,13 +126,17 @@ int solution(vector<string> storage, vector<string> requests) {
             }
         }
     }
+    
+    // 2. Calculate answer
     for (int r = 0; r < len_r; r++) {
         for (int c = 0; c < len_c; c++) {
-            if (status[r][c] != removed)
+            //cout << status[r][c];
+            if (status[r][c] != removed_no_outside && status[r][c] != removed_yes_outside)
                 answer++;
         }
+        //cout << "\n";
     }
     
-    // 2. Return result
+    // 3. Return result
     return answer;
 }
